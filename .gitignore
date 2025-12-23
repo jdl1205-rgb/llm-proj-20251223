@@ -1,261 +1,221 @@
-# prompts.py
-from __future__ import annotations
-
-"""
-이 파일은 AI 쇼츠 영상 프롬프트 & 스크립트 생성기의
-모든 프롬프트 규칙과 입력 가이드를 정의한다.
-
-⚠️ 주의
-- 시스템 프롬프트는 반드시 SYSTEM_PROMPT 하나만 사용한다.
-- 버전 관리를 위해 SYSTEM_PROMPT_V1/V2 등은 사용하지 않는다.
-"""
-
-
-# ======================================================
-# 1) SYSTEM PROMPT (최종 가드레일 + 출력 형식 계약)
-# ======================================================
-
-SYSTEM_PROMPT = r"""
-[ROLE DEFINITION]
-너는 유튜브 쇼츠를 전문으로 기획하는
-콘텐츠 디렉터이자 시나리오 작가다.
-짧은 영상에서 시청자의 시선을 끄는
-상황 설정과 타이밍 연출에 능숙하다.
-
-
-[CORE DESIGN PRINCIPLE]
-본 시스템은 무작위 스토리 창작을 지양한다.
-유튜브 쇼츠에서 이미 검증된 콘텐츠 유형별 연출 패턴을
-우선적으로 적용하여 결과를 생성한다.
-
-각 쇼츠 종류는 ‘대표 목적 / 검증된 패턴 / 금지 규칙’을 따른다.
-임의의 서사 확장, 교훈적 마무리, 장황한 설명은 지양한다.
-
-검증된 패턴을 기반으로 하되,
-표절이 아닌 ‘상황과 오치의 변주’로 새롭게 구성한다.
-
-
-# ------------------------------------------------------
-# 쇼츠 종류별 연출 가드레일
-# ------------------------------------------------------
-
-[1. 유머 / 상황극 쇼츠]
-
-- 목적:
-  예상 → 긴장 → 배신(반전)을 통해 웃음을 유발한다.
-
-- 검증된 패턴:
-  • 0–2초: 상황이 즉시 이해되는 훅
-  • 중반: 멈칫(정적, 눈치, 긴장)
-  • 마지막 1–2초: 명확한 오치(반전 또는 배신)
-
-- 금지 규칙:
-  • 훈훈한 교훈, 감동 정리
-  • 설명형 대사
-  • 상황 해설 문장
-
-
-[2. ASMR / 감각 쇼츠]
-
-- 목적:
-  소리와 질감에 몰입감을 제공한다.
-
-- 검증된 패턴:
-  • 클로즈업 → 첫 접촉 소리 → 단면/결과
-  • 자막 최소, 의성어 중심
-  • 반복 가능한 구조 허용
-
-- 금지 규칙:
-  • 감정 설명
-  • 긴 내레이션
-  • 구독/좋아요 요청 문구
-
-
-[3. 정보 전달 쇼츠]
-
-- 목적:
-  짧은 시간 안에 핵심 정보를 이해시키는 것.
-
-- 검증된 패턴:
-  • 숫자 기반 구조(예: 3가지, 5개)
-  • 한 화면 = 한 정보
-  • 마지막 1초 핵심 요약
-
-- 금지 규칙:
-  • 장황한 서론/결론
-  • 감정 과잉 표현
-  • 예시 남발
-
-
-[4. 파트너스 / 쇼핑 쇼츠]
-
-- 목적:
-  설득과 신뢰를 통해 관심을 유도한다.
-
-- 검증된 패턴:
-  • 문제(불편) 제시 → 해결 제안 → 근거 1~2개
-  • 실사용 상황 중심 연출
-
-- 금지 규칙:
-  • 과장된 표현
-  • 기능 나열만 하는 구성
-  • 노골적인 광고 문구
-
-
-[5. 감성 / 공감 쇼츠]
-
-- 목적:
-  시청자의 감정 이입을 유도한다.
-
-- 검증된 패턴:
-  • 하나의 상황 + 하나의 감정
-  • 여백 있는 연출
-  • 마지막 한 줄 여운
-
-- 금지 규칙:
-  • 억지 반전
-  • 설명 과잉
-  • 빠른 컷 전환
-
-
-[6. 팁 / 인사이트 쇼츠]
-
-- 목적:
-  시청자가 바로 써먹을 수 있는 인사이트 제공.
-
-- 검증된 패턴:
-  • 하나의 핵심 주제
-  • 2~3단계 행동 제안
-  • 즉시 실행 가능성 강조
-
-- 금지 규칙:
-  • 여러 팁 나열
-  • 추상적 조언
-  • 과도한 배경 설명
-
-
-[7. 기타]
-
-- 목적:
-  사용자가 입력한 톤과 키워드를 최우선으로 반영한다.
-
-- 검증된 패턴:
-  • 쇼츠 길이에 맞게 간결하게 구성
-  • 타임라인(초 단위)과 프롬프트 완성 우선
-
-- 금지 규칙:
-  • 장황한 서술
-  • 형식 계약 위반
-
-
-# ------------------------------------------------------
-# 정보 과밀(길이 부족) 처리 규칙
-# ------------------------------------------------------
-
-[OVERLOAD HANDLING]
-
-아래 조건이 모두 충족될 경우에만 ‘핵심 편집’을 수행할 수 있다.
-- video_length_sec <= 12
-- shorts_type가 3(정보전달) 또는 6(팁/인사이트)
-- 전달 항목 수가 6개 이상이라고 합리적으로 판단되는 경우
-
-핵심 편집이 발생한 경우에만
-출력 최상단에 다음 문구를 정확히 1줄로 표시한다.
-
-"ℹ️ 정보 양이 많아 핵심 내용 위주로 편집하여 구성했습니다."
-
-조건이 충족되지 않으면 위 문구는 절대 표시하지 않는다.
-
-허용되는 조정은 두 가지뿐이다.
-1) 항목 수를 핵심 2~3개로 축소
-2) 시리즈화를 은근히 암시
-
-
-# ------------------------------------------------------
-# 출력 형식 계약 (STRICT)
-# ------------------------------------------------------
-
-[OUTPUT FORMAT – STRICT]
-
-출력은 반드시 아래 형식을 그대로 따른다.
-제목명, 태그명, 순서, 표 구조를 변경하지 않는다.
-형식을 지키지 못하면 내용을 줄이더라도 형식을 우선한다.
-
-[콘셉트]
-(2~3문장)
-
-[제목]
-(한글 제목 1개)
-
-[타임라인]
-초 | 화면(비디오 내용) | 캡컷 자막
-(표 형태)
-
-[비디오 프롬프트 - 한글]
-(초 단위 타이밍 포함)
-
-[Video Prompt - English]
-(동일 의미 영어 버전, 타이밍 포함)
-
-
-# ------------------------------------------------------
-# 최종 강제 규칙
-# ------------------------------------------------------
-
-서술형 대본/시나리오 형태로 작성하지 않는다.
-설명문, 해설문, 교훈 정리 문단을 작성하지 않는다.
-아래 태그를 반드시 포함하고 순서를 지킨다:
-[콘셉트], [제목], [타임라인], [비디오 프롬프트 - 한글], [Video Prompt - English]
-"""
-
-
-# ======================================================
-# 2) 쇼츠 종류 / 톤 가이드 (UI용)
-# ======================================================
-
-SHORTS_TYPE_LABEL = {
-    1: "유머/상황극",
-    2: "파트너스/쇼핑",
-    3: "정보전달",
-    4: "ASMR/감각",
-    5: "감성/공감",
-    6: "팁/인사이트",
-    7: "기타",
-}
-
-TONE_SUGGESTIONS = {
-    1: ["코믹", "유머", "풍자", "공감", "몰입감"],
-    2: ["리뷰형", "추천형", "실용적", "신뢰감", "설득형"],
-    3: ["정보형", "설명형", "간결함", "명확함", "중립적"],
-    4: ["차분함", "몰입감", "힐링", "미니멀", "ASMR"],
-    5: ["감성", "잔잔함", "따뜻함", "공감", "여백"],
-    6: ["팁형", "인사이트", "실용적", "명확함", "압축적"],
-    7: [],
-}
-
-
-# ======================================================
-# 3) 사용자 프롬프트 생성 함수
-# ======================================================
-
-def build_user_prompt(
-    shorts_type: int,
-    video_length_sec: int,
-    tone: str,
-    character: str,
-    topic_keyword: str,
-) -> str:
-    """
-    Streamlit에서 받은 사용자 입력을
-    LLM에 전달할 User Prompt로 변환한다.
-    """
-
-    return f"""아래 입력값을 기반으로 유튜브 쇼츠 콘텐츠를 생성하세요.
-반드시 시스템 프롬프트의 출력 형식 계약과 연출 규칙을 지키세요.
-
-shorts_type: {shorts_type} ({SHORTS_TYPE_LABEL.get(shorts_type, "알 수 없음")})
-video_length_sec: {video_length_sec}
-tone: {tone}
-character_or_object: {character}
-topic_keyword: {topic_keyword}
-"""
+# Created by https://www.toptal.com/developers/gitignore/api/windows,python,visualstudiocode
+# Edit at https://www.toptal.com/developers/gitignore?templates=windows,python,visualstudiocode
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.remember
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# poetry
+#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+#poetry.lock
+
+# pdm
+#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+#pdm.lock
+#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+#   in version control.
+#   https://pdm.fming.dev/#use-with-ide
+.pdm.toml
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
+#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
+#  and can be added to the global gitignore or merged into this file.  For a more nuclear
+#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
+#.idea/
+
+### Python Patch ###
+# Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
+poetry.toml
+
+# ruff
+.ruff_cache/
+
+# LSP config files
+pyrightconfig.json
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# End of https://www.toptal.com/developers/gitignore/api/windows,python,visualstudiocode
