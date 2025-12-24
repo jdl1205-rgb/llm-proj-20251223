@@ -9,7 +9,10 @@ __pycache__/
 .remember
 # C extensions
 *.so
-
+**/.venv
+**/venv
+.env*
+**/.env*
 # Distribution / packaging
 .Python
 build/
