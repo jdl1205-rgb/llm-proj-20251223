@@ -135,7 +135,7 @@ def generate_with_retry(system_prompt: str, user_prompt: str, model: str):
 # 파싱/표시 유틸
 # =========================
 def extract_sora_block(text: str) -> str:
-    m = re.search(r"\[AI 비디오 생성 프롬프트 - English \(Sora\)\].*", text, re.DOTALL)
+    m = re.search(r"\[AI 비디오 생성 프롬프트 - En \(Sora등\)\].*", text, re.DOTALL)
     return m.group(0).strip() if m else ""
 
 
@@ -143,7 +143,7 @@ def remove_sora_block_for_display(text: str) -> str:
     """
     결과창(st.code)에는 Sora 섹션을 제거해 중복을 없앤다.
     """
-    pattern = r"\n*\[AI 비디오 생성 프롬프트 - English \(Sora\)\].*"
+    pattern = r"\n*\[AI 비디오 생성 프롬프트 - En \(Sora등\)\].*"
     return re.sub(pattern, "", text, flags=re.DOTALL).strip()
 
 
@@ -151,7 +151,7 @@ def extract_title_a(text: str) -> str:
     if "[제목 A]" not in text:
         return ""
     chunk = text.split("[제목 A]", 1)[1]
-    for nt in ["[제목 B]", "[타임라인]", "[비디오 프롬프트 - 한글]", "[AI 비디오 생성 프롬프트 - English (Sora)]"]:
+    for nt in ["[제목 B]", "[타임라인]", "[비디오 프롬프트 - Ko]", "[AI 비디오 생성 프롬프트 - English (Sora 등)]"]:
         if nt in chunk:
             chunk = chunk.split(nt, 1)[0]
             break
@@ -259,11 +259,11 @@ with right:
     if not st.session_state.last_output:
         st.info("왼쪽에서 입력 후 '생성하기'를 눌러주세요.")
     else:
-        st.markdown("### 생성 결과 (Sora 섹션 제외)")
+        st.markdown("### 생성 결과")
         st.code(st.session_state.last_display, language="markdown")
 
         if st.session_state.last_sora:
-            st.markdown("### Sora 복사용 (섹션 전체)")
+            st.markdown("### Sora 등 복사용 (섹션 전체)")
             st.text_area("", st.session_state.last_sora, height=260)
 
         st.divider()
